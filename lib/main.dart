@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:pokemon_cart_app/presentation/bloc/cart/cart_event.dart';
 
 import 'data/datasources/pokemon_remote_datasource.dart';
 import 'data/repositories/pokemon_repository_impl.dart';
@@ -12,6 +11,7 @@ import 'domain/usecases/get_pokemon_list.dart';
 import 'domain/entities/cart_item.dart';
 import 'presentation/bloc/pokemon/pokemon_bloc.dart';
 import 'presentation/bloc/cart/cart_bloc.dart';
+import 'presentation/bloc/cart/cart_event.dart';
 import 'presentation/pages/catalog_page.dart';
 
 final getIt = GetIt.instance;
@@ -54,17 +54,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pokemon Cart App',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (context) => getIt<PokemonBloc>()),
-          BlocProvider(
-            create: (context) => getIt<CartBloc>()..add(const LoadCart()),
-          ),
-        ],
-        child: const CatalogPage(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => getIt<PokemonBloc>()),
+        BlocProvider(
+          create: (context) => getIt<CartBloc>()..add(const LoadCart()),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Pokemon Cart App',
+        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+        home: const CatalogPage(),
       ),
     );
   }

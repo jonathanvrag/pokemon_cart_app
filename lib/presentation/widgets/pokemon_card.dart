@@ -109,14 +109,19 @@ class PokemonCard extends StatelessWidget {
                 builder: (context, state) {
                   final isLoading =
                       state is CartLoading && state.pokemonName == pokemon.name;
-
                   return ElevatedButton.icon(
                     onPressed: isLoading
                         ? null
                         : () {
-                            context.read<CartBloc>().add(
-                              AddPokemonToCart(pokemon: pokemon),
-                            );
+                            try {
+                              final cartBloc = context.read<CartBloc>();
+                              if (!cartBloc.isClosed) {
+                                cartBloc.add(
+                                  AddPokemonToCart(pokemon: pokemon),
+                                );
+                              }
+                            // ignore: empty_catches
+                            } catch (e) {}
                           },
                     icon: isLoading
                         ? const SizedBox(

@@ -32,6 +32,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     AddPokemonToCart event,
     Emitter<CartState> emit,
   ) async {
+    if (isClosed) return;
+
     emit(CartLoading(pokemonName: event.pokemon.name));
 
     try {
@@ -40,6 +42,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       );
 
       if (alreadyExists) {
+        if (isClosed) return;
         emit(
           CartError(
             message:
@@ -49,7 +52,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         );
         await HapticFeedback.mediumImpact();
         await Future.delayed(const Duration(milliseconds: 1500));
-        emit(_buildCartLoadedState());
+        if (!isClosed) emit(_buildCartLoadedState());
         return;
       }
 
@@ -76,6 +79,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       await Future.delayed(const Duration(milliseconds: 100));
       await HapticFeedback.lightImpact();
 
+      if (isClosed) return;
       emit(
         PokemonAdded(
           pokemonName: event.pokemon.name,
@@ -84,12 +88,14 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       );
 
       await Future.delayed(const Duration(milliseconds: 1500));
-      emit(_buildCartLoadedState());
+      if (!isClosed) emit(_buildCartLoadedState());
     } catch (e) {
       await HapticFeedback.heavyImpact();
-      emit(CartError(message: 'Error: $e', pokemonName: event.pokemon.name));
-      await Future.delayed(const Duration(milliseconds: 1500));
-      emit(_buildCartLoadedState());
+      if (!isClosed) {
+        emit(CartError(message: 'Error: $e', pokemonName: event.pokemon.name));
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (!isClosed) emit(_buildCartLoadedState());
+      }
     }
   }
 
@@ -97,6 +103,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     RemovePokemonFromCart event,
     Emitter<CartState> emit,
   ) async {
+    if (isClosed) return;
+
     try {
       await HapticFeedback.mediumImpact();
 
@@ -110,9 +118,9 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       }
 
       _cartItems.removeWhere((item) => item.pokemonName == event.pokemonName);
-      emit(_buildCartLoadedState());
+      if (!isClosed) emit(_buildCartLoadedState());
     } catch (e) {
-      emit(CartError(message: 'Error: $e'));
+      if (!isClosed) emit(CartError(message: 'Error: $e'));
     }
   }
 
