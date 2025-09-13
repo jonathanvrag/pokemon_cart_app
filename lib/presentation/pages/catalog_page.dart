@@ -5,6 +5,8 @@ import '../bloc/pokemon/pokemon_event.dart';
 import '../bloc/pokemon/pokemon_state.dart';
 import '../bloc/cart/cart_bloc.dart';
 import '../bloc/cart/cart_state.dart';
+import '../bloc/connectivity/Connectivity_bloc.dart';
+import '../bloc/connectivity/connectivity_state.dart';
 import '../widgets/pokemon_card.dart';
 import 'cart_page.dart';
 
@@ -51,6 +53,37 @@ class _CatalogPageState extends State<CatalogPage> {
         title: const Text('Pokémon Catalog'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: [
+          BlocBuilder<ConnectivityBloc, ConnectivityState>(
+            builder: (conetxt, state) {
+              return Container(
+                margin: const EdgeInsets.only(right: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      state is ConnectivityOnline ? Icons.wifi : Icons.wifi_off,
+                      color: state is ConnectivityOnline
+                          ? Colors.green
+                          : Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      state is ConnectivityOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: state is ConnectivityOnline
+                            ? Colors.green
+                            : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<PokemonBloc, PokemonState>(
         builder: (context, state) {

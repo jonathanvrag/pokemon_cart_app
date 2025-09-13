@@ -12,6 +12,7 @@ import 'domain/entities/cart_item.dart';
 import 'presentation/bloc/pokemon/pokemon_bloc.dart';
 import 'presentation/bloc/cart/cart_bloc.dart';
 import 'presentation/bloc/cart/cart_event.dart';
+import 'presentation/bloc/connectivity/Connectivity_bloc.dart';
 import 'presentation/pages/catalog_page.dart';
 
 final getIt = GetIt.instance;
@@ -47,6 +48,7 @@ Future<void> setupDependencies() async {
   // BLoCs
   getIt.registerFactory(() => PokemonBloc(getPokemonList: getIt()));
   getIt.registerLazySingleton(() => CartBloc());
+  getIt.registerLazySingleton(() => ConnectivityBloc());
 }
 
 class MyApp extends StatelessWidget {
@@ -60,6 +62,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => getIt<CartBloc>()..add(const LoadCart()),
         ),
+        BlocProvider(create: (context) => getIt<ConnectivityBloc>()),
       ],
       child: MaterialApp(
         title: 'Pokemon Cart App',
