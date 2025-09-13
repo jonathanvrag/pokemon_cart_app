@@ -9,21 +9,22 @@ import 'data/repositories/pokemon_repository_impl.dart';
 import 'domain/repositories/pokemon_repository.dart';
 import 'domain/usecases/get_pokemon_list.dart';
 import 'domain/entities/cart_item.dart';
+import 'core/services/sync_service.dart';
 import 'presentation/bloc/pokemon/pokemon_bloc.dart';
 import 'presentation/bloc/cart/cart_bloc.dart';
 import 'presentation/bloc/cart/cart_event.dart';
-import 'presentation/bloc/connectivity/Connectivity_bloc.dart';
+import 'presentation/bloc/connectivity/connectivity_bloc.dart';
 import 'presentation/pages/catalog_page.dart';
 
 final getIt = GetIt.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  
   await Hive.initFlutter();
   Hive.registerAdapter(CartItemAdapter());
   await Hive.openBox<CartItem>('cartBox');
-
+  
   await setupDependencies();
   runApp(const MyApp());
 }
@@ -31,6 +32,9 @@ void main() async {
 Future<void> setupDependencies() async {
   // External dependencies
   getIt.registerLazySingleton<Dio>(() => Dio());
+
+  // Services
+  getIt.registerLazySingleton<SyncService>(() => SyncService(getIt()));
 
   // Data sources
   getIt.registerLazySingleton<PokemonRemoteDataSource>(
@@ -47,8 +51,11 @@ Future<void> setupDependencies() async {
 
   // BLoCs
   getIt.registerFactory(() => PokemonBloc(getPokemonList: getIt()));
-  getIt.registerLazySingleton(() => CartBloc());
   getIt.registerLazySingleton(() => ConnectivityBloc());
+  getIt.registerLazySingleton(() => CartBloc(
+    syncService: getIt(),
+    connectivityBloc: getIt(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -58,15 +65,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => getIt<PokemonBloc>()),
-        BlocProvider(
-          create: (context) => getIt<CartBloc>()..add(const LoadCart()),
-        ),
         BlocProvider(create: (context) => getIt<ConnectivityBloc>()),
+        BlocProvider(create: (context) => getIt<CartBloc>()..add(const LoadCart())),
+        BlocProvider(create: (context) => getIt<PokemonBloc>()),
       ],
       child: MaterialApp(
         title: 'Pokemon Cart App',
-        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+        ),
         home: const CatalogPage(),
       ),
     );

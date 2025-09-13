@@ -5,7 +5,7 @@ abstract class CartEvent extends Equatable {
   const CartEvent();
 
   @override
-  List<Object?> get props => [];
+  List<Object> get props => [];
 }
 
 class AddPokemonToCart extends CartEvent {
@@ -14,7 +14,7 @@ class AddPokemonToCart extends CartEvent {
   const AddPokemonToCart({required this.pokemon});
 
   @override
-  List<Object?> get props => [pokemon];
+  List<Object> get props => [pokemon];
 }
 
 class RemovePokemonFromCart extends CartEvent {
@@ -23,7 +23,7 @@ class RemovePokemonFromCart extends CartEvent {
   const RemovePokemonFromCart({required this.pokemonName});
 
   @override
-  List<Object?> get props => [pokemonName];
+  List<Object> get props => [pokemonName];
 }
 
 class LoadCart extends CartEvent {
@@ -32,4 +32,17 @@ class LoadCart extends CartEvent {
 
 class ClearCart extends CartEvent {
   const ClearCart();
+}
+
+class SyncCart extends CartEvent {
+  const SyncCart();
+}
+
+class ConnectivityStatusChanged extends CartEvent {
+  final bool isConnected;
+
+  const ConnectivityStatusChanged({required this.isConnected});
+
+  @override
+  List<Object> get props => [isConnected];
 }
