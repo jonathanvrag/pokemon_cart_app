@@ -1,18 +1,31 @@
 import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/services/haptic_service.dart';
+import 'package:hive/hive.dart';
+import 'package:flutter/services.dart';
 import '../../../core/services/location_service.dart';
 import '../../../domain/entities/cart_item.dart';
 import 'cart_event.dart';
 import 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
-  final List<CartItem> _cartItems = [];
+  late Box<CartItem> _cartBox;
+  List<CartItem> _cartItems = [];
 
   CartBloc() : super(CartInitial()) {
+    _cartBox = Hive.box<CartItem>('cartBox');
+
+    on<LoadCart>(_onLoadCart);
     on<AddPokemonToCart>(_onAddPokemonToCart);
     on<RemovePokemonFromCart>(_onRemovePokemonFromCart);
-    on<LoadCart>(_onLoadCart);
+  }
+
+  void _onLoadCart(LoadCart event, Emitter<CartState> emit) {
+    try {
+      _cartItems = _cartBox.values.toList();
+      emit(_buildCartLoadedState());
+    } catch (e) {
+      emit(CartError(message: 'Error cargando carrito: $e'));
+    }
   }
 
   Future<void> _onAddPokemonToCart(
@@ -23,30 +36,31 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
     try {
       bool alreadyExists = _cartItems.any(
-        (item) => item.pokemon.name == event.pokemon.name,
+        (item) => item.pokemonName == event.pokemon.name,
       );
 
       if (alreadyExists) {
         emit(
           CartError(
-            message: '¡Este Pokémon ya está en el carrito!',
+            message:
+                '¡${event.pokemon.name.toUpperCase()} ya está en tu carrito!',
             pokemonName: event.pokemon.name,
           ),
         );
-        await HapticService.mediumImpact();
+        await HapticFeedback.mediumImpact();
         await Future.delayed(const Duration(milliseconds: 1500));
         emit(_buildCartLoadedState());
         return;
       }
 
-      await HapticService.lightImpact();
+      await HapticFeedback.lightImpact();
 
       final locationData = await LocationService.getCurrentLocation();
 
       final random = Random();
       final price = (random.nextDouble() * 99.99) + 0.01;
 
-      final cartItem = CartItem(
+      final cartItem = CartItem.fromPokemon(
         pokemon: event.pokemon,
         simulatedPrice: price,
         captureTime: DateTime.now(),
@@ -55,9 +69,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         locationName: locationData?.locationName,
       );
 
+      await _cartBox.add(cartItem);
       _cartItems.add(cartItem);
 
-      await HapticService.successPattern();
+      await HapticFeedback.selectionClick();
+      await Future.delayed(const Duration(milliseconds: 100));
+      await HapticFeedback.lightImpact();
 
       emit(
         PokemonAdded(
@@ -69,8 +86,10 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       await Future.delayed(const Duration(milliseconds: 1500));
       emit(_buildCartLoadedState());
     } catch (e) {
-      await HapticService.heavyImpact();
-      emit(CartError(message: 'Error al agregar el Pokémon: $e'));
+      await HapticFeedback.heavyImpact();
+      emit(CartError(message: 'Error: $e', pokemonName: event.pokemon.name));
+      await Future.delayed(const Duration(milliseconds: 1500));
+      emit(_buildCartLoadedState());
     }
   }
 
@@ -79,18 +98,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     try {
-      await HapticService.mediumImpact();
+      await HapticFeedback.mediumImpact();
 
-      _cartItems.removeWhere((item) => item.pokemon.name == event.pokemonName);
+      final keys = _cartBox.keys.toList();
+      for (final key in keys) {
+        final item = _cartBox.get(key);
+        if (item?.pokemonName == event.pokemonName) {
+          await _cartBox.delete(key);
+          break;
+        }
+      }
 
+      _cartItems.removeWhere((item) => item.pokemonName == event.pokemonName);
       emit(_buildCartLoadedState());
     } catch (e) {
-      emit(CartError(message: 'Error al eliminar el Pokémon: $e'));
+      emit(CartError(message: 'Error: $e'));
     }
-  }
-
-  void _onLoadCart(LoadCart event, Emitter<CartState> emit) {
-    emit(_buildCartLoadedState());
   }
 
   CartLoaded _buildCartLoadedState() {
@@ -100,7 +123,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     );
 
     return CartLoaded(
-      items: List.from(_cartItems),
+      items: List.unmodifiable(_cartItems),
       totalPrice: totalPrice,
       totalItems: _cartItems.length,
     );

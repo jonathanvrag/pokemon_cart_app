@@ -29,3 +29,7 @@ class RemovePokemonFromCart extends CartEvent {
 class LoadCart extends CartEvent {
   const LoadCart();
 }
+
+class ClearCart extends CartEvent {
+  const ClearCart();
+}

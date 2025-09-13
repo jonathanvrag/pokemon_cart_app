@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:pokemon_cart_app/presentation/bloc/cart/cart_event.dart';
 
 import 'data/datasources/pokemon_remote_datasource.dart';
 import 'data/repositories/pokemon_repository_impl.dart';
 import 'domain/repositories/pokemon_repository.dart';
 import 'domain/usecases/get_pokemon_list.dart';
+import 'domain/entities/cart_item.dart';
 import 'presentation/bloc/pokemon/pokemon_bloc.dart';
 import 'presentation/bloc/cart/cart_bloc.dart';
 import 'presentation/pages/catalog_page.dart';
@@ -14,6 +17,12 @@ import 'presentation/pages/catalog_page.dart';
 final getIt = GetIt.instance;
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(CartItemAdapter());
+  await Hive.openBox<CartItem>('cartBox');
+
   await setupDependencies();
   runApp(const MyApp());
 }
@@ -51,7 +60,9 @@ class MyApp extends StatelessWidget {
       home: MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => getIt<PokemonBloc>()),
-          BlocProvider(create: (context) => getIt<CartBloc>()),
+          BlocProvider(
+            create: (context) => getIt<CartBloc>()..add(const LoadCart()),
+          ),
         ],
         child: const CatalogPage(),
       ),
