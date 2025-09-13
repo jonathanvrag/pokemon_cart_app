@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
-// Imports de tu app
 import 'data/datasources/pokemon_remote_datasource.dart';
 import 'data/repositories/pokemon_repository_impl.dart';
 import 'domain/repositories/pokemon_repository.dart';
 import 'domain/usecases/get_pokemon_list.dart';
 import 'presentation/bloc/pokemon/pokemon_bloc.dart';
+import 'presentation/bloc/cart/cart_bloc.dart';
 import 'presentation/pages/catalog_page.dart';
 
 final getIt = GetIt.instance;
@@ -37,6 +37,7 @@ Future<void> setupDependencies() async {
 
   // BLoCs
   getIt.registerFactory(() => PokemonBloc(getPokemonList: getIt()));
+  getIt.registerLazySingleton(() => CartBloc());
 }
 
 class MyApp extends StatelessWidget {
@@ -46,12 +47,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pokemon Cart App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: BlocProvider(
-        create: (context) => getIt<PokemonBloc>(),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => getIt<PokemonBloc>()),
+          BlocProvider(create: (context) => getIt<CartBloc>()),
+        ],
         child: const CatalogPage(),
       ),
     );

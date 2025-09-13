@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/pokemon.dart';
+import '../bloc/cart/cart_bloc.dart';
+import '../bloc/cart/cart_event.dart';
+import '../bloc/cart/cart_state.dart';
 
 class PokemonCard extends StatelessWidget {
   final Pokemon pokemon;
-  final VoidCallback onAddToCart;
 
-  const PokemonCard({
-    super.key,
-    required this.pokemon,
-    required this.onAddToCart,
-  });
+  const PokemonCard({super.key, required this.pokemon});
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +62,77 @@ class PokemonCard extends StatelessWidget {
                 ],
               ),
             ),
-            ElevatedButton.icon(
-              onPressed: onAddToCart,
-              icon: const Icon(Icons.add_shopping_cart),
-              label: const Text('Agregar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+            BlocListener<CartBloc, CartState>(
+              listenWhen: (previous, current) {
+                if (current is PokemonAdded) {
+                  return current.pokemonName == pokemon.name;
+                }
+                if (current is CartError) {
+                  return current.pokemonName == pokemon.name;
+                }
+                return false;
+              },
+              listener: (context, state) {
+                if (state is PokemonAdded &&
+                    state.pokemonName == pokemon.name) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${state.pokemonName.toUpperCase()} capturado!${state.location != null ? '\n📍 ${state.location}' : ''}',
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else if (state is CartError &&
+                    state.pokemonName == pokemon.name) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: BlocBuilder<CartBloc, CartState>(
+                buildWhen: (previous, current) {
+                  if (current is CartLoading) {
+                    return current.pokemonName == pokemon.name;
+                  }
+                  if (current is CartLoaded) {
+                    return true;
+                  }
+                  return false;
+                },
+                builder: (context, state) {
+                  final isLoading =
+                      state is CartLoading && state.pokemonName == pokemon.name;
+
+                  return ElevatedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            context.read<CartBloc>().add(
+                              AddPokemonToCart(pokemon: pokemon),
+                            );
+                          },
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.catching_pokemon),
+                    label: Text(isLoading ? 'Capturando...' : 'Capturar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey,
+                    ),
+                  );
+                },
               ),
             ),
           ],

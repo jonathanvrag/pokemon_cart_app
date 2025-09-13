@@ -92,17 +92,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 }
 
                 final pokemon = state.pokemonList[index];
-                return PokemonCard(
-                  pokemon: pokemon,
-                  onAddToCart: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${pokemon.name} added to cart!'),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                );
+                return PokemonCard(pokemon: pokemon);
               },
             );
           }

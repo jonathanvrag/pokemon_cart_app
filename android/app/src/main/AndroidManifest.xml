@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Geolocation permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Permission for vibration -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:label="pokemon_cart_app"
         android:name="${applicationName}"
