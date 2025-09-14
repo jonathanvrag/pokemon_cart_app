@@ -61,70 +61,8 @@ class _CatalogPageState extends State<CatalogPage> {
 
     try {
       context.read<CartBloc>().add(AddPokemonToCart(pokemon: pokemon));
-      await Future.delayed(const Duration(milliseconds: 1500));
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '${pokemon.name.toUpperCase()} agregado al carrito',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.catching_pokemon,
-                  color: const Color(0xCCFFFFFF),
-                  size: 20,
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green.shade600,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Error al agregar ${pokemon.name.toUpperCase()}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
+      await Future.delayed(const Duration(milliseconds: 1500));
     } finally {
       if (mounted) {
         setState(() {
@@ -217,7 +155,83 @@ class _CatalogPageState extends State<CatalogPage> {
             Expanded(
               child: BlocListener<CartBloc, CartState>(
                 listener: (context, state) {
-                  if (state is CartSyncInProgress) {
+                  if (state is CartError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                state.message,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.shopping_cart,
+                              color: Colors.white.withOpacity(0.8),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.orange.shade600,
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.all(16),
+                      ),
+                    );
+                  } else if (state is PokemonAdded) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                state.location != null
+                                    ? '${state.pokemonName.toUpperCase()} capturado en ${state.location}'
+                                    : '${state.pokemonName.toUpperCase()} agregado al carrito',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              state.location != null
+                                  ? Icons.location_on
+                                  : Icons.catching_pokemon,
+                              color: Colors.white.withOpacity(0.8),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.green.shade600,
+                        duration: const Duration(seconds: 3),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.all(16),
+                      ),
+                    );
+                  } else if (state is CartSyncInProgress) {
                     _syncSnackBarTimer?.cancel();
                     _syncSnackBarTimer = Timer(const Duration(seconds: 2), () {
                       if (!_isSyncSnackBarVisible) {
