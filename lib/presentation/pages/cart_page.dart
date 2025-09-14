@@ -10,394 +10,364 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tu Carrito'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        actions: [
-          BlocBuilder<CartBloc, CartState>(
-            builder: (context, state) {
-              if (state is CartLoaded && state.items.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(Icons.delete_sweep),
-                  onPressed: () {
-                    _showClearCartDialog(context);
-                  },
-                  tooltip: 'Vaciar carrito',
-                );
-              }
-              return const SizedBox();
-            },
-          ),
-        ],
-      ),
-      body: BlocBuilder<CartBloc, CartState>(
-        builder: (context, state) {
-          if (state is CartLoading) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Cargando carrito...'),
-                ],
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 20,
+                left: 24,
+                right: 24,
+                bottom: 20,
               ),
-            );
-          }
-
-          if (state is CartError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Error: ${state.message}', textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<CartBloc>().add(const LoadCart());
-                    },
-                    child: const Text('Reintentar'),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, size: 28),
+                    padding: EdgeInsets.zero,
                   ),
-                ],
-              ),
-            );
-          }
-
-          if (state is CartLoaded) {
-            if (state.items.isEmpty) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'Tu carrito está vacío',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '¡Agrega algunos Pokémon para comenzar!',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: state.items.length,
-                    itemBuilder: (context, index) {
-                      final item = state.items[index];
-                      return Card(
-                        key: ValueKey(item.pokemonName),
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        child: Dismissible(
-                          key: ValueKey('dismissible_${item.pokemonName}'),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.delete, color: Colors.white, size: 28),
-                                Text('Eliminar', style: TextStyle(color: Colors.white)),
-                              ],
-                            ),
-                          ),
-                          onDismissed: (direction) {
-                            context.read<CartBloc>().add(
-                              RemovePokemonFromCart(pokemonName: item.pokemonName),
-                            );
-                            
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${item.pokemonName} eliminado del carrito'),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          child: ListTile(
-                            key: ValueKey('listtile_${item.pokemonName}'), // ← ÚNICO CAMBIO: Key para ListTile
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: Colors.grey.shade100,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  item.imageUrl,
-                                  fit: BoxFit.contain,
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    );
-                                  },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.image_not_supported, color: Colors.grey);
-                                  },
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              item.pokemonName.toUpperCase(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Precio: \$${item.simulatedPrice.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                if (item.locationName != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '📍 ${item.locationName}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 2),
-                                Text(
-                                  '🕒 ${_formatDateTime(item.captureTime)}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                              onPressed: () {
-                                _showDeleteConfirmation(context, item.pokemonName);
-                              },
-                              tooltip: 'Eliminar del carrito',
-                            ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tu Carrito',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-                
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.shade300),
+                        SizedBox(height: 4),
+                        Text(
+                          'Pokémon seleccionados',
+                          style: TextStyle(fontSize: 14, color: Colors.black54),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: BlocBuilder<CartBloc, CartState>(
+                builder: (context, state) {
+                  if (state is CartLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (state is CartError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'Total de ítems: ${state.totalItems}',
-                            style: const TextStyle(fontSize: 16),
+                          const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red,
                           ),
+                          const SizedBox(height: 16),
                           Text(
-                            'Total: \$${state.totalPrice.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                            'Error: ${state.message}',
+                            style: const TextStyle(fontSize: 16),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _showCheckoutDialog(context, state.totalItems, state.totalPrice);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                    );
+                  }
+
+                  if (state is CartLoaded) {
+                    final items = state.items;
+
+                    if (items.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 80,
+                              color: Colors.grey.shade400,
                             ),
-                          ),
-                          child: const Text(
-                            'Proceder al Checkout',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Tu carrito está vacío',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Agrega algunos Pokémon desde el catálogo',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade300,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                              ),
+                              child: const Text(
+                                'Explorar Catálogo',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              final item = items[index];
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Image.network(
+                                          item.imageUrl,
+                                          fit: BoxFit.cover,
+                                          width: 40,
+                                          height: 40,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const Icon(
+                                                    Icons.catching_pokemon,
+                                                    color: Colors.white,
+                                                    size: 40,
+                                                  ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.pokemonName.toUpperCase(),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'Precio: \$${item.simulatedPrice.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '📍 ${item.locationName ?? 'Ubicación no disponible'}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            Text(
+                                              '🕒 ${DateTime.now().toString().split(' ')[0]}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          onPressed: () {
+                                            context.read<CartBloc>().add(
+                                              RemovePokemonFromCart(
+                                                pokemonName: item.pokemonName,
+                                              ),
+                                            );
+                                          },
+                                          icon: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red.shade400,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }
 
-          return const SizedBox();
-        },
-      ),
-    );
-  }
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, -5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total de items: ${state.totalItems}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Total: \$${state.totalPrice.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.celebration,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Text(
+                                              '¡Checkout completado! 🎉',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.green.shade600,
+                                        duration: const Duration(seconds: 3),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        margin: const EdgeInsets.all(16),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade400,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                  child: const Text(
+                                    'Proceder al Checkout',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
 
-  String _formatDateTime(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final year = dateTime.year;
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    
-    return '$day/$month/$year - $hour:$minute';
-  }
-
-  void _showDeleteConfirmation(BuildContext context, String pokemonName) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmar eliminación'),
-          content: Text('¿Estás seguro de que quieres eliminar $pokemonName del carrito?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<CartBloc>().add(
-                  RemovePokemonFromCart(pokemonName: pokemonName),
-                );
-                Navigator.of(context).pop();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$pokemonName eliminado del carrito'),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Eliminar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showClearCartDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Vaciar carrito'),
-          content: const Text('¿Estás seguro de que quieres eliminar todos los Pokémon del carrito?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<CartBloc>().add(const ClearCart());
-                Navigator.of(context).pop();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Carrito vaciado completamente'),
-                    duration: Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Vaciar todo'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showCheckoutDialog(BuildContext context, int totalItems, double totalPrice) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('🎉 Checkout'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('¡Gracias por tu compra!'),
-              const SizedBox(height: 8),
-              Text('Ítems: $totalItems Pokémon'),
-              Text('Total: \$${totalPrice.toStringAsFixed(2)}'),
-              const SizedBox(height: 12),
-              const Text(
-                '(Esta es una demostración - no se procesará ningún pago real)',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                  return const SizedBox();
+                },
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.read<CartBloc>().add(const ClearCart());
-                Navigator.of(context).pop();
-                Navigator.of(context).pop(); 
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('¡Compra realizada con éxito! 🎉'),
-                    duration: Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
-              child: const Text('Finalizar compra'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
