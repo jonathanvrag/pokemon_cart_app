@@ -393,7 +393,7 @@ class _CatalogPageState extends State<CatalogPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CartPage()),
+                  MaterialPageRoute(builder: (context) => CartPage()),
                 );
               },
               backgroundColor: const Color(0xFFA3CEF1),
