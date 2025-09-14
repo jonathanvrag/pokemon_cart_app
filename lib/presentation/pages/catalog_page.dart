@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/pokemon.dart';
 import '../bloc/pokemon/pokemon_bloc.dart';
 import '../bloc/pokemon/pokemon_event.dart';
 import '../bloc/pokemon/pokemon_state.dart';
@@ -9,7 +10,7 @@ import '../bloc/cart/cart_event.dart';
 import '../bloc/cart/cart_state.dart';
 import '../bloc/connectivity/connectivity_bloc.dart';
 import '../bloc/connectivity/connectivity_state.dart';
-import '../widgets/pokemon_card.dart';
+import '../widgets/colored_pokemon_card.dart';
 import 'cart_page.dart';
 
 class CatalogPage extends StatefulWidget {
@@ -23,6 +24,7 @@ class _CatalogPageState extends State<CatalogPage> {
   final ScrollController _scrollController = ScrollController();
   Timer? _syncSnackBarTimer;
   bool _isSyncSnackBarVisible = false;
+  final Map<int, bool> _loadingStates = {};
 
   @override
   void initState() {
@@ -48,7 +50,87 @@ class _CatalogPageState extends State<CatalogPage> {
     if (!_scrollController.hasClients) return false;
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.offset;
-    return currentScroll >= (maxScroll * 0.9);
+    return currentScroll >= (maxScroll * 0.8);
+  }
+
+  Future<void> _addPokemonToCart(Pokemon pokemon) async {
+    setState(() {
+      _loadingStates[pokemon.id] = true;
+    });
+
+    try {
+      context.read<CartBloc>().add(AddPokemonToCart(pokemon: pokemon));
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${pokemon.name.toUpperCase()} agregado al carrito',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.catching_pokemon,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 20,
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error al agregar ${pokemon.name.toUpperCase()}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingStates[pokemon.id] = false;
+        });
+      }
+    }
   }
 
   @override
@@ -58,6 +140,7 @@ class _CatalogPageState extends State<CatalogPage> {
         title: const Text('Pokémon Catalog'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
@@ -147,6 +230,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 _isSyncSnackBarVisible = false;
               });
             }
+
             if (state is CartSyncFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -197,25 +281,36 @@ class _CatalogPageState extends State<CatalogPage> {
             }
 
             if (state is PokemonLoaded) {
-              return ListView.builder(
+              return GridView.builder(
                 controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
                 itemCount: state.hasReachedMax
                     ? state.pokemonList.length
-                    : state.pokemonList.length + 1,
+                    : state.pokemonList.length + 2,
                 itemBuilder: (context, index) {
                   if (index >= state.pokemonList.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      child: const Center(child: CircularProgressIndicator()),
                     );
                   }
 
                   final pokemon = state.pokemonList[index];
-                  return PokemonCard(
+                  final isLoading = _loadingStates[pokemon.id] ?? false;
+
+                  return ColoredPokemonCard(
                     key: ValueKey(pokemon.name),
                     pokemon: pokemon,
+                    isLoading: isLoading,
+                    onAddToCart: () => _addPokemonToCart(pokemon),
                   );
                 },
               );
@@ -239,9 +334,10 @@ class _CatalogPageState extends State<CatalogPage> {
                 MaterialPageRoute(builder: (context) => const CartPage()),
               );
             },
+            backgroundColor: Colors.blue,
             child: Stack(
               children: [
-                const Icon(Icons.shopping_cart),
+                const Icon(Icons.shopping_cart, color: Colors.white),
                 if (itemCount > 0)
                   Positioned(
                     right: 0,

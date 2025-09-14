@@ -6,7 +6,7 @@ class PokemonModel extends Pokemon {
     required super.name,
     required super.imageUrl,
     required super.url,
-    required super.type,
+    required super.types,
   });
 
   factory PokemonModel.fromJson(Map<String, dynamic> json) {
@@ -17,7 +17,7 @@ class PokemonModel extends Pokemon {
       imageUrl:
           'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$pokemonId.png',
       url: json['url'],
-      type: 'unknown',
+      types: [],
     );
   }
 
