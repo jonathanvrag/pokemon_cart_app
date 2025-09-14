@@ -11,6 +11,7 @@ import '../bloc/cart/cart_state.dart';
 import '../bloc/connectivity/connectivity_bloc.dart';
 import '../bloc/connectivity/connectivity_state.dart';
 import '../widgets/colored_pokemon_card.dart';
+import '../widgets/header.dart';
 import 'cart_page.dart';
 
 class CatalogPage extends StatefulWidget {
@@ -80,7 +81,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 ),
                 Icon(
                   Icons.catching_pokemon,
-                  color: Colors.white.withOpacity(0.8),
+                  color: const Color(0xCCFFFFFF),
                   size: 20,
                 ),
               ],
@@ -136,188 +137,224 @@ class _CatalogPageState extends State<CatalogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pokémon Catalog'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: BlocBuilder<CartBloc, CartState>(
-              builder: (context, cartState) {
-                return BlocBuilder<ConnectivityBloc, ConnectivityState>(
-                  builder: (context, connectivityState) {
-                    final isOnline = connectivityState is ConnectivityOnline;
-                    final isSynced = cartState is CartLoaded
-                        ? cartState.isSynced
-                        : true;
-                    final canShowSync =
-                        isOnline && isSynced && !_isSyncSnackBarVisible;
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Header(),
+            Padding(
+              padding: const EdgeInsets.only(right: 24, bottom: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  BlocBuilder<CartBloc, CartState>(
+                    builder: (context, cartState) {
+                      return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                        builder: (context, connectivityState) {
+                          final isOnline =
+                              connectivityState is ConnectivityOnline;
+                          final isSynced = cartState is CartLoaded
+                              ? cartState.isSynced
+                              : true;
+                          final canShowSync =
+                              isOnline && isSynced && !_isSyncSnackBarVisible;
 
-                    Icon icon;
-                    String text;
-                    Color color;
+                          Icon icon;
+                          String text;
+                          Color color;
 
-                    if (!isOnline) {
-                      icon = const Icon(Icons.cloud_off, size: 20);
-                      text = 'Offline';
-                      color = Colors.red;
-                    } else if (canShowSync) {
-                      icon = const Icon(Icons.cloud_done, size: 20);
-                      text = 'Sync';
-                      color = Colors.green;
-                    } else {
-                      icon = const Icon(Icons.cloud_sync, size: 20);
-                      text = 'Pending';
-                      color = Colors.orange;
-                    }
+                          if (!isOnline) {
+                            icon = const Icon(Icons.cloud_off, size: 18);
+                            text = 'Offline';
+                            color = Colors.red;
+                          } else if (canShowSync) {
+                            icon = const Icon(Icons.cloud_done, size: 18);
+                            text = 'Sincronizado';
+                            color = Colors.green;
+                          } else {
+                            icon = const Icon(Icons.cloud_sync, size: 18);
+                            text = 'Sincronizando';
+                            color = Colors.orange;
+                          }
 
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon.icon, color: color, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          text,
-                          style: TextStyle(fontSize: 12, color: color),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      body: BlocListener<CartBloc, CartState>(
-        listener: (context, state) {
-          if (state is CartSyncInProgress) {
-            _syncSnackBarTimer?.cancel();
-            _syncSnackBarTimer = Timer(const Duration(seconds: 2), () {
-              if (!_isSyncSnackBarVisible) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Row(
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Text('Sincronizando carrito...'),
-                      ],
-                    ),
-                    backgroundColor: Colors.blue,
-                    duration: Duration(minutes: 1),
-                  ),
-                );
-                setState(() {
-                  _isSyncSnackBarVisible = true;
-                });
-              }
-            });
-          } else {
-            _syncSnackBarTimer?.cancel();
-            if (_isSyncSnackBarVisible) {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              setState(() {
-                _isSyncSnackBarVisible = false;
-              });
-            }
-
-            if (state is CartSyncFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('❌ Error de sincronización: ${state.error}'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 4),
-                  action: SnackBarAction(
-                    label: 'Reintentar',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      context.read<CartBloc>().add(const SyncCart());
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: color.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon.icon, color: color, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  text,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
-                ),
-              );
-            }
-          }
-        },
-        child: BlocBuilder<PokemonBloc, PokemonState>(
-          builder: (context, state) {
-            if (state is PokemonInitial || state is PokemonLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+                ],
+              ),
+            ),
 
-            if (state is PokemonError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error: ${state.message}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<PokemonBloc>().add(
-                          const LoadPokemonList(),
+            Expanded(
+              child: BlocListener<CartBloc, CartState>(
+                listener: (context, state) {
+                  if (state is CartSyncInProgress) {
+                    _syncSnackBarTimer?.cancel();
+                    _syncSnackBarTimer = Timer(const Duration(seconds: 2), () {
+                      if (!_isSyncSnackBarVisible) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Text('Sincronizando carrito...'),
+                              ],
+                            ),
+                            backgroundColor: Colors.blue,
+                            duration: Duration(minutes: 1),
+                          ),
                         );
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                        setState(() {
+                          _isSyncSnackBarVisible = true;
+                        });
+                      }
+                    });
+                  } else {
+                    _syncSnackBarTimer?.cancel();
+                    if (_isSyncSnackBarVisible) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      setState(() {
+                        _isSyncSnackBarVisible = false;
+                      });
+                    }
 
-            if (state is PokemonLoaded) {
-              return GridView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: state.hasReachedMax
-                    ? state.pokemonList.length
-                    : state.pokemonList.length + 2,
-                itemBuilder: (context, index) {
-                  if (index >= state.pokemonList.length) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(child: CircularProgressIndicator()),
-                    );
+                    if (state is CartSyncFailure) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '❌ Error de sincronización: ${state.error}',
+                          ),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 4),
+                          action: SnackBarAction(
+                            label: 'Reintentar',
+                            textColor: Colors.white,
+                            onPressed: () {
+                              context.read<CartBloc>().add(const SyncCart());
+                            },
+                          ),
+                        ),
+                      );
+                    }
                   }
-
-                  final pokemon = state.pokemonList[index];
-                  final isLoading = _loadingStates[pokemon.id] ?? false;
-
-                  return ColoredPokemonCard(
-                    key: ValueKey(pokemon.name),
-                    pokemon: pokemon,
-                    isLoading: isLoading,
-                    onAddToCart: () => _addPokemonToCart(pokemon),
-                  );
                 },
-              );
-            }
+                child: BlocBuilder<PokemonBloc, PokemonState>(
+                  builder: (context, state) {
+                    if (state is PokemonInitial || state is PokemonLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-            return const SizedBox();
-          },
+                    if (state is PokemonError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error,
+                              size: 64,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error: ${state.message}',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                context.read<PokemonBloc>().add(
+                                  const LoadPokemonList(),
+                                );
+                              },
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (state is PokemonLoaded) {
+                      return GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.75,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                        itemCount: state.hasReachedMax
+                            ? state.pokemonList.length
+                            : state.pokemonList.length + 2,
+                        itemBuilder: (context, index) {
+                          if (index >= state.pokemonList.length) {
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+
+                          final pokemon = state.pokemonList[index];
+                          final isLoading = _loadingStates[pokemon.id] ?? false;
+
+                          return ColoredPokemonCard(
+                            key: ValueKey(pokemon.name),
+                            pokemon: pokemon,
+                            isLoading: isLoading,
+                            onAddToCart: () => _addPokemonToCart(pokemon),
+                          );
+                        },
+                      );
+                    }
+
+                    return const SizedBox();
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: BlocBuilder<CartBloc, CartState>(
